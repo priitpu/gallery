@@ -73,3 +73,6 @@ button, .Button {
     outline: none;
     color: #fff;
 }
+.Modal--image nav {
+    text-align: center;
+}

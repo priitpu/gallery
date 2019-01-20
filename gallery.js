@@ -45,6 +45,7 @@ class Gallery {
                 imageTemplate
             }
         );
+        console.log(this.config.images.length);
         this.generateImages(
             this.config.galleryElement,
             this.config.imageTemplate,
@@ -52,14 +53,20 @@ class Gallery {
         );
     }
     nextImage() {
-        this.currentIndex + 1 > this.config.images.length
-        ? this.currentIndex = 0
-        : this.currentIndex += 1;
+        if (this.currentIndex + 1 > this.config.images.length - 1) {
+            this.currentIndex = 0;
+        } else {
+            this.currentIndex += 1;
+        }
+        this.changeModalImage(this.config.images[this.currentIndex]);
     }
     prevImage() {
-        this.currentIndex - 1 < 0
-        ? this.currentIndex = this.config.images.length
-        : this.currentIndex -= 1;
+        if (this.currentIndex - 1 < 0) {
+            this.currentIndex = this.config.images.length - 1;
+        } else {
+            this.currentIndex -= 1;
+        }
+        this.changeModalImage(this.config.images[this.currentIndex]);
     }
     generateImages(galleryElement, imageTemplate, images) {
         const gallery = qs(galleryElement);
@@ -79,20 +86,48 @@ class Gallery {
     }
     openModal(image) {
         const imageModal = qs('.Modal--image');
-        const imageModalHeader = this.getNodeChildWithClass(imageModal, 'Modal__footer');
-        this.getNodeChildWithNodeName(imageModalHeader, 'H3').innerText = image.title;
+        // traversing the dom in vanilla js sucks
+        const imageModalHeader = this.getNodeChildWithClass(imageModal, 'Modal__header');
+        const imageModalCloseButton = this.getNodeChildWithClass(imageModalHeader, 'Button--close');
+        const imageModalInner = this.getNodeChildWithClass(imageModal, 'Modal__inner');
+        const imageModalFooter = this.getNodeChildWithClass(imageModal, 'Modal__footer');
+        const imageModalImage = this.getNodeChildWithNodeName(imageModalInner, 'IMG');
+        const imageModalNav = this.getNodeChildWithNodeName(imageModalFooter, 'NAV');
+        const imageModalNavNext = this.getNodeChildWithClass(imageModalNav, 'Button--next');
+        const imageModalNavPrev = this.getNodeChildWithClass(imageModalNav, 'Button--prev');
+        imageModalNavNext.addEventListener('click', () => {
+            this.nextImage();
+        });
+        imageModalNavPrev.addEventListener('click', () => {
+            this.prevImage();
+        });
+        this.getNodeChildWithNodeName(imageModalFooter, 'H3').innerText = image.title;
+        imageModalImage.setAttribute('src', image.file);
+        imageModalImage.setAttribute('alt', image.title);
+        this.currentIndex = imageData.indexOf(image);
+        imageModalCloseButton.addEventListener('click', () => {
+            this.closeModal(imageModal);
+        }, { once: true });
+        imageModal.showModal();
+    }
+    closeModal(modalNode) {
+        modalNode.close();
+    }
+    changeModalImage(image) {
+        const imageModal = qs('.Modal--image');
         const imageModalInner = this.getNodeChildWithClass(imageModal, 'Modal__inner');
         const imageModalImage = this.getNodeChildWithNodeName(imageModalInner, 'IMG');
         imageModalImage.setAttribute('src', image.file);
+        const imageModalFooter = this.getNodeChildWithClass(imageModal, 'Modal__footer');
+        this.getNodeChildWithNodeName(imageModalFooter, 'H3').innerText = image.title;
         imageModalImage.setAttribute('alt', image.title);
-        imageModal.showModal();
     }
-    getNodeChildWithClass(node, className) {
+    getNodeChildWithClass(node, className) { //make recursive?
         return Array.from(node.childNodes).filter(
-            el => el.className ? el.className.match(className) : false
+            el => el.className ? el.className.includes(className) : false
         )[0];
     }
-    getNodeChildWithNodeName(node, nodeName) {
+    getNodeChildWithNodeName(node, nodeName) { //make recursive?
         return Array.from(node.childNodes).filter(
             el => el.nodeName === nodeName
         )[0];
